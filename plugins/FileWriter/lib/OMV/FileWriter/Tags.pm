@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use MT;
 use MT::FileMgr;
+use MT::I18N;
 
 use vars qw( $VENDOR $MYNAME $FULLNAME );
 $FULLNAME = join '::',
@@ -27,19 +28,22 @@ sub RemoveFile {
             ( my $out_path  = $blog->site_path ) =~ s!/*$!/!;
                  $out_path .= $path;
 
+            my $fmgr = $blog->file_mgr;
             if( $args->{case_insensitive}) {
                 my( $pathname, $filename ) = $out_path =~ m!(.+/)(.+)!;
                 if( opendir( my $dh, $pathname )) {
                     map {
-                        unlink "$pathname$_";
+                        $fmgr->delete( "$pathname$_" );
                     } grep {
-                        !/^\.+$/ && /\Q$filename\E/i && -f "$pathname$_";
+                        !/^\.+$/ && /\Q$filename\E/i && $fmgr->exists( "$pathname$_" );
+                    } map {
+                        MT::I18N::decode_utf8($_);
                     } readdir $dh;
                     closedir $dh;
                 }
             }
             else {
-                unlink $out_path;
+                $fmgr->delete( $out_path );
             }
         }
     }
